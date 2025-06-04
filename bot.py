@@ -1,48 +1,45 @@
 import os
 import re
 import discord
-from datetime import datetime, timedelta, timezone
-from discord.ext import commands
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
-# Load token
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-# Set intents
 intents = discord.Intents.default()
 intents.message_content = True
 
-# Create bot with activity status
-bot = commands.Bot(
-    command_prefix="!",
-    intents=intents,
-    activity=discord.Game(name="EVE Online"),
-    status=discord.Status.online
-)
+client = discord.Client(intents=intents)
 
-ET_OFFSET = -4  # Adjust for DST (can be dynamic if needed)
-
-@bot.event
+@client.event
 async def on_ready():
-    print(f"✅ Logged in as {bot.user}")
+    print(f"Logged in as {client.user}")
+    # Show custom status
+    await client.change_presence(activity=discord.Game(name="EVE Online"))
 
-@bot.event
+@client.event
 async def on_message(message):
-    if message.author == bot.user:
+    if message.author == client.user:
         return
 
     match = re.search(r'(\d{1,2}):(\d{2})ET', message.content)
     if match:
         hour, minute = map(int, match.groups())
-        et_time = datetime.utcnow().replace(hour=hour, minute=minute, second=0, microsecond=0) - timedelta(hours=ET_OFFSET)
-        timestamp = int(et_time.replace(tzinfo=timezone.utc).timestamp())
 
-        reply = f"🕒 <t:{timestamp}:f> (your local time)"
-        await message.channel.send(reply)
-        await message.add_reaction("🔥")
+        # Convert ET (assumed to be UTC-4) to UTC
+        # Add 4 hours to get back to UTC
+        utc_time = datetime.utcnow().replace(hour=hour, minute=minute, second=0, microsecond=0) + timedelta(hours=4)
 
-    await bot.process_commands(message)
+        timestamp = int(utc_time.replace(tzinfo=timezone.utc).timestamp())
+        replacement = f"<t:{timestamp}:f> (your local time)"
 
-# Run the bot
-bot.run(TOKEN)
+        try:
+            await message.edit(content=f"{message.content}\n🕒 {replacement}")
+            await message.add_reaction("🔥")
+        except discord.Forbidden:
+            print("Missing permissions to edit message or add reaction.")
+        except discord.HTTPException as e:
+            print(f"Failed to edit message: {e}")
+
+client.run(TOKEN)
