@@ -35,7 +35,7 @@ async def on_message(message):
             # EVE time = UTC, no DST. Assume message means UTC time
             eve_time = datetime.utcnow().replace(hour=hour, minute=minute, second=0, microsecond=0)
             timestamp = int(eve_time.replace(tzinfo=timezone.utc).timestamp())
-            discord_timestamp = f"<t:{timestamp}:f> (your local time)"
+            discord_timestamp = f"<t:{timestamp}:f>"
 
             await message.channel.send(f"🕒 {discord_timestamp}")
             await message.add_reaction("🔥")
