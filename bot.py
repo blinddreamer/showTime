@@ -4,72 +4,70 @@ import discord
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
-# Load environment variables from .env
+# Load environment variables from .env file
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-# Setup intents to read message content
+# Enable intents with message content
 intents = discord.Intents.default()
 intents.message_content = True
 
-# Create client
+# Create Discord client with intents
 client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
     print(f"Logged in as {client.user} (ID: {client.user.id})")
-    # Set bot status to playing EVE Online
+    # Set the bot's status to "Playing EVE Online"
     await client.change_presence(activity=discord.Game(name="EVE Online"))
     print("Bot is ready and status set.")
 
 @client.event
 async def on_message(message):
-    print(f"Received message from {message.author}: {message.content!r}")
+    # Print every message to help debug
+    print(f"Message from {message.author}: {message.content!r}")
 
-    # Ignore messages from ourselves
+    # Ignore messages sent by the bot itself
     if message.author == client.user:
-        print("Message from self, ignoring.")
+        print("Ignoring own message.")
         return
 
-    # Regex to find times like 19:00ET (case insensitive)
+    # Regex to find times like 19:00ET, 9:05et, etc.
     match = re.search(r'(\d{1,2}):(\d{2})ET', message.content, re.IGNORECASE)
     if match:
-        print("Matched EVE time in message!")
+        print("EVE time pattern matched!")
 
         hour, minute = map(int, match.groups())
 
-        # Convert EVE Time (UTC+4) to UTC for Discord timestamp:
-        # EVE time is UTC +4, so to get UTC, subtract 4 hours
-        # But since we build a datetime in utcnow and replace hour/minute,
-        # we add 4 hours to utcnow (that’s how we did it previously),
-        # let's be consistent and do it like this:
-
-        # First get today's date in UTC
+        # Build a datetime object for today at the given EVE time
         now_utc = datetime.utcnow()
-        # Create datetime with the matched hour/minute but today’s date in UTC
+
+        # EVE Time is UTC+4, so subtract 4 hours to get UTC time
         eve_time_utc = now_utc.replace(hour=hour, minute=minute, second=0, microsecond=0) - timedelta(hours=4)
 
-        # Get unix timestamp for Discord formatting
+        # Convert to Unix timestamp (seconds since epoch)
         timestamp = int(eve_time_utc.replace(tzinfo=timezone.utc).timestamp())
 
-        # Create replacement string for local Discord client time display
+        # Format for Discord's timestamp markdown (will display in user's local timezone)
         replacement = f"<t:{timestamp}:f> (your local time)"
 
         try:
-            # Edit original message to append converted time
+            # Edit the original message to add converted time on a new line
             new_content = f"{message.content}\n🕒 {replacement}"
             await message.edit(content=new_content)
+            print("Message edited successfully.")
 
-            # Add fire emoji reaction
+            # React with fire emoji
             await message.add_reaction("🔥")
+            print("Reaction added successfully.")
 
-            print("Edited message and added reaction successfully.")
         except discord.Forbidden:
-            print("Missing permissions to edit message or add reaction.")
+            print("Permission error: cannot edit message or add reaction.")
         except discord.HTTPException as e:
-            print(f"Failed to edit message: {e}")
-    else:
-        print("No EVE time match found in message.")
+            print(f"Discord HTTP error: {e}")
 
-# Run the bot
+    else:
+        print("No EVE time found in this message.")
+
+print(f"Starting bot with token prefix: {TOKEN[:5]}...")  # For debug, never show full token
 client.run(TOKEN)
