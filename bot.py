@@ -5,19 +5,27 @@ from datetime import datetime, timedelta, timezone
 from discord.ext import commands
 from dotenv import load_dotenv
 
+# Load token
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
+# Set intents
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+# Create bot with activity status
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents,
+    activity=discord.Game(name="EVE Online"),
+    status=discord.Status.online
+)
 
-ET_OFFSET = -4  # adjust depending on Daylight Saving Time
+ET_OFFSET = -4  # Adjust for DST (can be dynamic if needed)
 
 @bot.event
 async def on_ready():
-    print(f"Logged in as {bot.user}")
+    print(f"✅ Logged in as {bot.user}")
 
 @bot.event
 async def on_message(message):
@@ -35,3 +43,6 @@ async def on_message(message):
         await message.add_reaction("🔥")
 
     await bot.process_commands(message)
+
+# Run the bot
+bot.run(TOKEN)
