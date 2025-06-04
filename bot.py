@@ -8,14 +8,13 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 intents = discord.Intents.default()
-intents.message_content = True
+intents.message_content = True  # Necessary to read message content
 
 client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
     print(f"Logged in as {client.user}")
-    # Set custom status (playing EVE Online)
     await client.change_presence(activity=discord.Game(name="EVE Online"))
 
 @client.event
@@ -24,22 +23,27 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    # Look for times like 19:00ET in the message
+    print(f"Message received: '{message.content}' from {message.author}")
+
+    # Regex to find time like 19:00ET (case sensitive)
     match = re.search(r'(\d{1,2}):(\d{2})ET', message.content)
     if match:
+        print("Detected time pattern in message!")
+
         hour, minute = map(int, match.groups())
 
-        # Convert ET (assumed UTC-4) to UTC by adding 4 hours
+        # Current UTC date+time, then replace hour & minute from message,
+        # then add 4 hours to convert ET (UTC-4) to UTC
         utc_time = datetime.utcnow().replace(hour=hour, minute=minute, second=0, microsecond=0) + timedelta(hours=4)
 
-        # Create a Discord timestamp for local time display
+        # Get unix timestamp for Discord timestamp formatting
         timestamp = int(utc_time.replace(tzinfo=timezone.utc).timestamp())
         replacement = f"<t:{timestamp}:f> (your local time)"
 
         try:
-            # Edit original message to append converted time
-            await message.edit(content=f"{message.content}\n🕒 {replacement}")
-            # React with fire emoji
+            # Append the converted time to the original message
+            new_content = f"{message.content}\n🕒 {replacement}"
+            await message.edit(content=new_content)
             await message.add_reaction("🔥")
         except discord.Forbidden:
             print("Missing permissions to edit message or add reaction.")
