@@ -1,7 +1,7 @@
 import os
 import re
 import discord
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 # Load environment variables from .env
@@ -27,22 +27,35 @@ async def on_message(message):
 
     print(f"📨 Message from {message.author}: {message.content}")
 
-    match = re.search(r'(\d{1,2}):(\d{2})ET', message.content, re.IGNORECASE)
-    if match:
-        hour, minute = map(int, match.groups())
+    # Match multiple times like "13:00et" or "15:00 et"
+    matches = re.findall(r'(\d{1,2}):(\d{2})\s*et', message.content, re.IGNORECASE)
 
-        try:
-            # EVE time = UTC, no DST. Assume message means UTC time
-            eve_time = datetime.utcnow().replace(hour=hour, minute=minute, second=0, microsecond=0)
-            timestamp = int(eve_time.replace(tzinfo=timezone.utc).timestamp())
-            discord_timestamp = f"<t:{timestamp}:f>"
+    if matches:
+        responses = []
+        for hour_str, minute_str in matches:
+            try:
+                hour, minute = int(hour_str), int(minute_str)
 
-            await message.channel.send(f"🕒 {discord_timestamp}")
+                # Convert to UTC (EVE time)
+                now = datetime.utcnow()
+                eve_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+
+                # If the time has already passed today, assume it's for tomorrow
+                if eve_time < now:
+                    eve_time += timedelta(days=1)
+
+                timestamp = int(eve_time.replace(tzinfo=timezone.utc).timestamp())
+                discord_timestamp = f"<t:{timestamp}:f>"
+                responses.append(f"`{hour:02}:{minute:02}ET` → {discord_timestamp}")
+
+                print(f"✅ Time converted: {hour:02}:{minute:02}ET")
+
+            except Exception as e:
+                print(f"❌ Error while processing time: {e}")
+
+        if responses:
+            await message.channel.send("🕒 " + " | ".join(responses))
             await message.add_reaction("🔥")
-            print(f"✅ Time converted and replied for: {hour}:{minute}ET")
-
-        except Exception as e:
-            print(f"❌ Error while processing time: {e}")
 
 # Start the bot
 client.run(TOKEN)
