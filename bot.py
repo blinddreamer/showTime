@@ -1,7 +1,7 @@
 import os
 import re
 import discord
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 
 # Load environment variables from .env
@@ -10,7 +10,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 # Setup intents
 intents = discord.Intents.default()
-intents.message_content = True
+intents.message_content = True  # IMPORTANT: must also be enabled in the Developer Portal
 
 # Create Discord client
 client = discord.Client(intents=intents)
@@ -27,35 +27,39 @@ async def on_message(message):
 
     print(f"📨 Message from {message.author}: {message.content}")
 
-    # Match multiple times like "13:00et" or "15:00 et"
+    # Match times like "13:00et" or "15:00 et"
     matches = re.findall(r'(\d{1,2}):(\d{2})\s*et', message.content, re.IGNORECASE)
 
-    if matches:
-        responses = []
-        for hour_str, minute_str in matches:
-            try:
-                hour, minute = int(hour_str), int(minute_str)
+    if not matches:
+        return  # no ET times in message
 
-                # Convert to UTC (EVE time)
-                now = datetime.utcnow()
-                eve_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    responses = []
+    now = datetime.utcnow()
 
-                # If the time has already passed today, assume it's for tomorrow
-                if eve_time < now:
-                    eve_time += timedelta(days=1)
+    for hour_str, minute_str in matches:
+        try:
+            hour, minute = int(hour_str), int(minute_str)
 
-                timestamp = int(eve_time.replace(tzinfo=timezone.utc).timestamp())
-                discord_timestamp = f"<t:{timestamp}:f>"
-                responses.append(f"`{hour:02}:{minute:02}ET` → {discord_timestamp}")
+            # Build the EVE/ET time for today
+            eve_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
-                print(f"✅ Time converted: {hour:02}:{minute:02}ET")
+            # If already passed today, assume it's for tomorrow
+            if eve_time < now:
+                eve_time += timedelta(days=1)
 
-            except Exception as e:
-                print(f"❌ Error while processing time: {e}")
+            # Convert to Discord timestamp
+            timestamp = int(eve_time.replace(tzinfo=timezone.utc).timestamp())
+            discord_timestamp = f"<t:{timestamp}:f>"
 
-        if responses:
-            await message.channel.send("🕒 " + " | ".join(responses))
-            await message.add_reaction("🔥")
+            responses.append(f"`{hour:02}:{minute:02}ET` → {discord_timestamp}")
+            print(f"✅ Converted: {hour:02}:{minute:02}ET → {discord_timestamp}")
+
+        except Exception as e:
+            print(f"❌ Error converting time: {e}")
+
+    if responses:
+        await message.channel.send("🕒 " + " | ".join(responses))
+        await message.add_reaction("🔥")
 
 # Start the bot
 client.run(TOKEN)
