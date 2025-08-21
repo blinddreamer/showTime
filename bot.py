@@ -49,7 +49,7 @@ async def on_message(message):
 
             # Convert to Discord timestamp
             timestamp = int(eve_time.replace(tzinfo=timezone.utc).timestamp())
-            discord_timestamp = f"<t:{timestamp}:f>"
+            discord_timestamp = f"<t:{timestamp}:t>"
 
             responses.append(f"`{hour:02}:{minute:02}ET` → {discord_timestamp}")
             print(f"✅ Converted: {hour:02}:{minute:02}ET → {discord_timestamp}")
