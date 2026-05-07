@@ -1,12 +1,25 @@
-# Discord Time Converter Bot ⏰🔥
+# Discord Time Converter Bot ⏰
 
-A simple Discord bot that listens for `HH:MMET` time mentions (like `19:00ET`) and:
-
-- Converts them to **EVE Time (UTC)**
-- Replies with the converted time
-- Reacts to the message with a 🔥 emoji
+A Discord bot that detects EVE Time (ET/UTC) mentions in chat and helps players convert them to their local timezone.
 
 Perfect for coordinating fleet ops across time zones.
+
+---
+
+## Features
+
+### Automatic ET detection
+
+When any message contains a time in `HH:MM ET` format (e.g. `19:00ET` or `15:30 et`), the bot replies with a button attached to the original message. Clicking **"🕒 Show in my timezone"** shows the converted local time — visible only to you.
+
+### `/et` slash command
+
+Use `/et` to manually convert an EVE time to your local timezone. Discord prompts for two separate fields:
+
+- **hour** — EVE time hour (0–23)
+- **minute** — EVE time minute (0–59)
+
+The result is shown only to you (ephemeral), so it won't clutter the channel.
 
 ---
 
