@@ -2,7 +2,7 @@ import os
 import re
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 
@@ -49,11 +49,17 @@ class ShowTimeView(discord.ui.View):
         )
 
 
+@tasks.loop(minutes=1)
+async def update_eve_time():
+    eve_time = datetime.now(timezone.utc).strftime("%H:%M ET")
+    await bot.change_presence(activity=discord.Game(name=eve_time))
+
+
 @bot.event
 async def on_ready():
     await bot.tree.sync()
     print(f"✅ Logged in as {bot.user} (ID: {bot.user.id})")
-    await bot.change_presence(activity=discord.Game(name="EVE Online"))
+    update_eve_time.start()
 
 
 @bot.event
