@@ -38,7 +38,7 @@ def convert_et_times(text: str) -> list[str]:
 
 class ShowTimeView(discord.ui.View):
     def __init__(self, conversions: list[str]):
-        super().__init__(timeout=600)
+        super().__init__(timeout=86400)
         self.conversions = conversions
 
     @discord.ui.button(label="Show in my timezone", emoji="🕒", style=discord.ButtonStyle.secondary)

@@ -10,7 +10,7 @@ Perfect for coordinating fleet ops across time zones.
 
 ### Automatic ET detection
 
-When any message contains a time in `HH:MM ET` format (e.g. `19:00ET` or `15:30 et`), the bot replies with a button attached to the original message. Clicking **"🕒 Show in my timezone"** shows the converted local time — visible only to you.
+When any message contains a time in `HH:MM ET` format (e.g. `19:00ET` or `15:30 et`), the bot replies with a button attached to the original message. Clicking **"🕒 Show in my timezone"** shows the converted local time — visible only to you. The button stays active for **24 hours** after the message is posted.
 
 ### `/et` slash command
 
