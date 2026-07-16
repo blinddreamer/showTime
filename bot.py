@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import discord
@@ -8,6 +9,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
+
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)-8s %(name)s %(message)s",
+)
+log = logging.getLogger("showtime")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -31,7 +38,7 @@ def convert_et_times(text: str) -> list[str]:
             ts = int(eve_time.replace(tzinfo=timezone.utc).timestamp())
             results.append(f"`{hour:02}:{minute:02}ET` → <t:{ts}:t>")
         except Exception as e:
-            print(f"❌ Error converting time: {e}")
+            log.warning("Error converting time: %s", e)
 
     return results
 
@@ -58,7 +65,7 @@ async def update_eve_time():
 @bot.event
 async def on_ready():
     await bot.tree.sync()
-    print(f"✅ Logged in as {bot.user} (ID: {bot.user.id})")
+    log.info("Logged in as %s (ID: %s)", bot.user, bot.user.id)
     update_eve_time.start()
 
 
@@ -67,7 +74,7 @@ async def on_message(message: discord.Message):
     if message.author == bot.user:
         return
 
-    print(f"📨 Message from {message.author}: {message.content}")
+    log.debug("Message from %s: %s", message.author, message.content)
 
     conversions = convert_et_times(message.content)
     if conversions:
