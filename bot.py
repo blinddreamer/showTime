@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
@@ -58,8 +59,13 @@ class ShowTimeView(discord.ui.View):
 
 @tasks.loop(minutes=1)
 async def update_eve_time():
+    if bot.is_closed():
+        return
     eve_time = datetime.now(timezone.utc).strftime("%H:%M ET")
-    await bot.change_presence(activity=discord.Game(name=eve_time))
+    try:
+        await bot.change_presence(activity=discord.Game(name=eve_time))
+    except (aiohttp.ClientConnectionResetError, ConnectionResetError, discord.ConnectionClosed):
+        log.debug("Skipped presence update; gateway connection not ready")
 
 
 @bot.event
