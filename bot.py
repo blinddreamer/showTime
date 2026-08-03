@@ -72,7 +72,8 @@ async def update_eve_time():
 async def on_ready():
     await bot.tree.sync()
     log.info("Logged in as %s (ID: %s)", bot.user, bot.user.id)
-    update_eve_time.start()
+    if not update_eve_time.is_running():
+        update_eve_time.start()
 
 
 @bot.event
